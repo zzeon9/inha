@@ -1,0 +1,93 @@
+<div>
+    <h1 class="text-center my-5"><%=title%></h1>
+    <div class="row">
+        <div class="col-md-4 col-lg-3">
+            <form name="frm" class="input-group">
+                <input name="query" class="form-control" value="인하대학교">
+                <button type="submit" class="btn btn-outline-primary">검색</button>
+            </form>
+        </div>
+    </div>
+    <div id="div_list"></div>
+    <div class="text-center">
+        <button id="prev" class="btn btn-primary px-2">이전</button>
+        <span id="page" class="mx-3">1</span>
+        <button id="next" class="btn btn-primary px-2">다음</button>
+    </div>
+    <script id="temp_list" type="x-handlebars-template">
+        <table class="table table-hover">
+            {{#each documents}}
+                <tr>
+                    <td><a href="{{url}}">{{{title}}}</td>
+                    <td>{{blogname}}</td>
+                </tr>
+            {{/each}}
+        </table>
+    </script>
+</div>
+
+<script>
+    let query = "인하대학교";
+    let page = 1;
+    let size = 10;
+
+    getList();
+
+    // 이름이 frm인 form이 submit 이벤트가 생겼을 때 어떤 작업을 할지 작성
+    $(frm).on("submit", function(e) {
+        e.preventDefault(); // 이 부분이 들어가야 검색했을 때 화면이 번쩍거리지 않음
+        query = $(frm.query).val();
+        getList();
+        if(query == ""){
+            alert("검색어를 입력해주세요.");
+        } else {
+            getList();
+        }
+    });
+
+    // 이전버튼을 클릭한 경우
+    $("#prev").on("click", function() {
+        page--;
+        getList();
+    });
+
+    // 다음버튼을 클릭한 경우
+    $("#next").on("click", function() {
+        page++;
+        getList();
+    });
+
+    function getList(){
+        $.ajax({
+            type: "GET",
+            url: "https://dapi.kakao.com/v2/search/blog",
+            data:{
+                query,
+                page,
+                size
+            },
+            headers: {
+                "Authorization": "KakaoAK d5ca2794177c46d956d70d33a3c8e99d"
+            },
+            success: function(data) {
+                console.log(data);
+                const temp = Handlebars.compile($("#temp_list").html()); // html로 compile 하겠다
+                $("#div_list").html(temp(data));
+
+                const last = Math.ceil(data.meta.pageable_count / size);
+                $("#page").html(`${page} / ${last}`);
+                if (page == 1) {
+                    $("#prev").attr("disabled", true);
+                } else {
+                    $("#prev").attr("disabled", false);
+                }
+
+                if(data.meta.is_end) {
+                    $("#next").attr("disabled", true);
+                } else {
+                    $("#next").attr("disabled", false);
+                }
+            }
+        });
+    }
+</script>
